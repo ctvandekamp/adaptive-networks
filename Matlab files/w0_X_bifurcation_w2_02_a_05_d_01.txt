@@ -1,0 +1,40 @@
+>> matcont
+>> 
+first point found
+tangent vector to first point found
+label = BP, x = ( 0.500000 0.875000 0.875000 1.250000 0.625000 )
+label = H , x = ( 0.500000 0.879197 0.879197 1.250000 0.604362 )
+Neutral saddle
+label = H , x = ( 0.500000 1.253877 1.253877 1.250000 -0.128083 )
+Neutral saddle
+label = H , x = ( 0.500000 1.637813 1.637813 1.250000 -0.316454 )
+Neutral saddle
+
+elapsed time  = 21.1 secs
+npoints curve = 29
+first point found
+tangent vector to first point found
+
+elapsed time  = 2.1 secs
+npoints curve = 23
+first point found
+tangent vector to first point found
+label = LP, x = ( 0.499990 0.874966 0.875034 1.250000 0.625000 )
+a=-2.896897e-05
+
+elapsed time  = 8.3 secs
+npoints curve = 54
+first point found
+tangent vector to first point found
+label = BP, x = ( 0.500000 0.875000 0.875000 1.250000 0.625000 )
+
+elapsed time  = 7.3 secs
+npoints curve = 45
+>> 
+
+
+X  = 0.5
+XX = 0.84429822
+YY = 0.84429822
+XY = 1.25
+w0 = 0.8
