@@ -1,0 +1,138 @@
+%%%% PREAMBLE
+
+% TEXT
+
+\usepackage{libertine}									% Font
+\usepackage{libertinust1math}							% Math font
+\usepackage[scaled=0.8]{beramono}						% Monospace font
+
+\usepackage[T1]{fontenc}                                % Makes it possible to use glyphs like "o etc
+\usepackage[UKenglish]{babel}							% Hyphenation according to UK rules
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MATH
+ 
+\usepackage{amsmath, amsfonts, amsthm, bm}
+\usepackage{mathabx}									% for \bigtimes for cartesian products
+\DeclareMathOperator\erf{erf}  							% error function as \erf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LINKS, REFERENCES, CITING ETC
+
+\usepackage[colorlinks=false,hidelinks,pdfpagelabels]{hyperref}
+\hypersetup{bookmarks=true}
+\usepackage[noabbrev]{cleveref}		% Makes clever referencing using \cref possible.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% STYLE
+
+\renewcommand{\cftchapterfont}{\normalfont}				% changes the font of sections in the TOC
+\renewcommand{\cftchapterpagefont}{\normalfont}			% changes the font of sections in the TOC
+\renewcommand*{\cftchapterleader}{\normalfont\cftdotfill{\cftsectiondotsep}}		% add dotted line for chapters to TOC
+
+\DisemulatePackage{setspace}							% makes setspace compatible with memoir
+\usepackage[labelfont={bf},textfont=it]{caption}		% makes captions bold + italic
+\usepackage{setspace}									% increase line spacing
+\captionsetup{font={stretch=1.25}}      				% change 1.25 for figures and tables
+\renewcommand{\baselinestretch}{1.25}					% increase line spacing such that inline formulae fit better
+
+
+\makechapterstyle{carsten}{%
+	\setlength\beforechapskip{0pt}
+	\setlength\midchapskip{0pt}
+	\setlength\afterchapskip{40pt}
+	\renewcommand\chapnamefont{%
+		\normalfont\centering\large\scshape\MakeLowercase}
+	\renewcommand\chapnumfont{%
+		\normalfont\centering\fontsize{60pt}{0pt}\selectfont}
+	\renewcommand\chaptitlefont{%
+		\normalfont\HUGE\bfseries\centering}
+	\renewcommand\printchaptername{%
+		\marginpar{\chapnamefont{\@chapapp}}}
+	\renewcommand\chapternamenum{}
+	\renewcommand\printchapternum{%
+		\marginpar{\chapnumfont\thechapter}}
+}
+
+% PAGE MARGINS
+\usepackage{geometry} 									% for setting other page margins in title page
+\setulmarginsandblock{3cm}{3cm}{*}		
+\setlrmarginsandblock{2cm}{4cm}{*}
+\checkandfixthelayout
+
+
+\usepackage{titlesec}				
+\titlespacing*{\section}{0pt}{1cm}{.5cm}  				% specificeren ruimte rondom sections, {left}{above}{under}
+
+
+\usepackage[bottom]{footmisc} 							% sets footnotes to bottom of page
+
+
+
+%% Floats & captions
+
+\usepackage{subcaption} 								% makes subtables possible
+
+
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[chapter] 					% reset theorem numbering for each chapter
+\newtheorem{definition}[theorem]{Definition} 			% definition numbers are dependent on theorem numbers
+\newtheorem{example}[theorem]{Example} 					% same for example numbers
+
+\def\code#1{\texttt{#1}}                                % Redefine \code command for mono-spaced text
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIGURES
+
+\usepackage{graphicx}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TIKZ
+
+\usepackage{tikz}
+\usetikzlibrary{quotes,angles}
+\usepackage{pgfplots}
+
+% Define dotted pattern to fill nodes
+\usetikzlibrary{arrows,patterns}
+\pgfdeclarepatternformonly{soft crosshatch}{\pgfqpoint{-1pt}{-1pt}}{\pgfqpoint{4pt}{4pt}}{\pgfqpoint{3pt}{3pt}}%
+{
+	\pgfsetstrokeopacity{0.3}
+	\pgfsetlinewidth{0.4pt}
+	\pgfpathmoveto{\pgfqpoint{3.1pt}{0pt}}
+	\pgfpathlineto{\pgfqpoint{0pt}{3.1pt}}
+	\pgfpathmoveto{\pgfqpoint{0pt}{0pt}}
+	\pgfpathlineto{\pgfqpoint{3.1pt}{3.1pt}}
+	\pgfusepath{stroke}
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% OTHER
+\newcommand\todo[1]{\textcolor{red}{#1}}
+
+
+
+\newcommand\X{[X]}
+\newcommand\Y{[Y]}
+\newcommand\Yi{[Y_i]}
+\newcommand\XX{\mathit{[XX]}}
+\newcommand\YY{\mathit{[YY]}}
+\newcommand\XY{\mathit{[XY]}}
+\newcommand\YZ{\mathit{[YZ]}}
+\newcommand\ZY{\mathit{[ZY]}}
+\newcommand\XZ{\mathit{[XZ]}}
+\newcommand\WX{\mathit{[WX]}}
+\newcommand\YW{\mathit{[YW]}}
+\newcommand\XYZ{\mathit{[XYZ]}}
+\newcommand\XYX{\mathit{[XYX]}}
+\newcommand\XYY{\mathit{[XYY]}}
+\newcommand\XXX{\mathit{[XXX]}}
+\newcommand\XYZW{\mathit{[^XY^Z_W]}}
+
+\renewcommand{\Re}{\text{}\operatorname{Re}}
+\renewcommand{\Im}{\text{}\operatorname{Im}}

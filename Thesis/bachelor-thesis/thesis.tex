@@ -1,0 +1,58 @@
+\documentclass[11pt, a4paper, twoside]{memoir}		
+
+\include{thesis-preamble}
+
+% Define bibliography style with biblatex, should be compiled with Biber. trad-abbrv tries to copy the abbrv style and then some extra arguments are needed
+\usepackage[style=trad-abbrv, sorting=none, doi=false, isbn=false, url=false, eprint=false]{biblatex} 
+\addbibresource{references.bib}
+\addbibresource{email.bib}
+\renewbibmacro{in:}{}
+\DeclareFieldFormat{pages}{#1}
+\DeclareFieldFormat[article,incollection,unpublished]{title}{#1}
+
+
+
+\begin{document}
+	
+
+\input{layout_settings.tex}	
+
+
+\title{On discrete and continuous state adaptive network models\\
+	\vspace{0.3cm}\Large with an application to self-organisation in swarming systems}
+\author{Carsten Thomas van de Kamp}
+\date{\today}
+
+
+\frontmatter		% turns off chapter numbering and uses roman numerals for page numbers;
+\include{title_page}
+
+
+\pagestyle{plain}	% Make header empty, page number centered at bottom
+
+\cleardoublepage
+\include{chapters/abstract}
+\cleardoublepage
+\begin{KeepFromToc}
+	\tableofcontents
+\end{KeepFromToc}
+
+\cleardoublepage
+
+\mainmatter			% turns on chapter numbering, resets page numbering and uses arabic numerals for page numbers;
+\pagestyle{carsten}
+
+\include{chapters/introduction}
+\include{chapters/counting_and_closure}
+\include{chapters/the_2_state_adaptive_network}
+\include{chapters/continuous_model}
+\include{chapters/swarming_systems}
+
+\include{chapters/conclusion_recommendation}
+
+\appendix			% resets chapter numbering, uses letters for chapter numbers and doesn't fiddle with page numbering;
+
+\renewcommand\bibname{References}
+\printbibliography
+
+\end{document}
