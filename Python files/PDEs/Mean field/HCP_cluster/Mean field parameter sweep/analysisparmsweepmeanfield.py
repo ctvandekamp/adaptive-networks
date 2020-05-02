@@ -74,7 +74,7 @@ def variance(states, omega):
 ANALYSIS
 """
 
-if False:
+if True:
     data = read_data('parameters.txt')
 
     omega = np.linspace(-np.pi, np.pi, num=data['0.0_1.0_1.0']
@@ -91,7 +91,7 @@ if False:
 Fitting a Gaussian curve with custom amplitude, mean and std, generates plot which is currently in the thesis
 Fitting a Lorentzian with custom amplitude, position of the peak x_0 and full width at half maximum fwhm
 """
-if True:
+if False:
     omega_axis = [val*radians for val in omega]
     dataset1 = data['0.01_1.0_1.0']['states_t%100'][-1]
     dataset2 = data['0.03_1.0_1.0']['states_t%100'][-1]
@@ -528,7 +528,7 @@ if False:
     plt.setp(legend1.get_title(), fontsize=16)
     plt.setp(legend2.get_title(), fontsize=16)
     plt.show()
-    fig.savefig('cont_mean_field_G_C_LSQ_BW.pdf')
+#    fig.savefig('cont_mean_field_G_C_LSQ_BW.pdf')
     fitted_model1_gauss_r2 = r2_score(dataset1, fitted_model1_gauss(omega))
     fitted_model2_gauss_r2 = r2_score(dataset2, fitted_model2_gauss(omega))
     fitted_model3_gauss_r2 = r2_score(dataset3, fitted_model3_gauss(omega))
@@ -598,3 +598,181 @@ if False:
 
     plt.show()
 #    fig.savefig('cont_mean_field_linlog_loglog.pdf')
+    
+    
+    
+"""
+Fitting Wrapped Cauchy distribution to the data. Should improve fig 5.8 from the thesis for the paper
+"""
+
+def WrappedCauchy(x,gamma):             # no multiplication parameter A as in eqn 5.11 since these functions integrate to 1 on [-pi,pi] in stead of on [-inf,inf]
+    x_0=0                                   # since all distributions are centered around 0
+    return 1/(2*np.pi) * np.sinh(gamma) / (np.cosh(gamma) - np.cos(x-x_0))
+
+if False:
+    omega_axis = [val*radians for val in omega]
+    dataset1 = data['0.01_1.0_1.0']['states_t%100'][-1]
+    dataset2 = data['0.03_1.0_1.0']['states_t%100'][-1]
+    dataset3 = data['0.06_1.0_1.0']['states_t%100'][-1]
+
+    fitted_model1_WC_parms, fitted_model1_WC_cov1 = curve_fit(WrappedCauchy, omega, dataset1)
+    fitted_model2_WC_parms, fitted_model1_WC_cov2 = curve_fit(WrappedCauchy, omega, dataset2) #      bounds=(0.068, [100, 0.075]))
+    fitted_model3_WC_parms, fitted_model1_WC_cov3 = curve_fit(WrappedCauchy, omega, dataset3)
+    
+    
+    fitted_model1_WC = WrappedCauchy(omega, *fitted_model1_WC_parms)
+    fitted_model2_WC = WrappedCauchy(omega, *fitted_model2_WC_parms)
+    fitted_model3_WC = WrappedCauchy(omega, *fitted_model3_WC_parms)
+
+    fig = plt.figure(figsize=(1.75*6.4/2, 4.8))
+    palette = plt.get_cmap('tab10')
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.set_xlabel(r'$x$', fontsize=12)
+    ax1.set_ylabel(r'$f\, (x;t)$', fontsize=12, rotation=0, labelpad=20)
+    ax1.set_xlim((-np.pi, np.pi))
+    ax1.set_ylim((0, 2.2))
+    ax1.plot(omega_axis, dataset1, color='k', linewidth=1,
+             linestyle='-', alpha=0.25, label=r'$0.01$')
+    ax1.plot(omega_axis, fitted_model1_WC, color='k',
+             linewidth=1, linestyle='--', alpha=1, label=r'$0.01$ LSQ WC')
+    ax1.plot(omega_axis, dataset2, color='k', linewidth=1.5,
+             linestyle='-', alpha=0.25, label=r'$0.03$')
+    ax1.plot(omega_axis, fitted_model2_WC, color='k',
+             linewidth=1, linestyle='-.', alpha=1, label=r'$0.03$ LSQ WC')
+    ax1.plot(omega_axis, dataset3, color='k', linewidth=2,
+             linestyle='-', alpha=0.25, label=r'$0.06$')
+    ax1.plot(omega_axis, fitted_model3_WC, color='k',
+             linewidth=1.5, linestyle=':', alpha=1, label=r'$0.06$ LSQ WC')
+    ax1.xaxis.set_major_locator(plt.MultipleLocator(np.pi / 2))
+    ax1.xaxis.set_minor_locator(plt.MultipleLocator(np.pi / 4))
+
+    legend1 = ax1.legend(title=r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', frameon=False)
+
+    plt.setp(legend1.get_title(), fontsize=16)
+    plt.show()
+ #   fig.savefig('cont_mean_field_WrappedCauchy_LSQ_x0is0_BW.pdf')
+    fitted_model1_WC_r2 = r2_score(dataset1, fitted_model1_WC)
+    fitted_model2_WC_r2 = r2_score(dataset2, fitted_model2_WC)
+    fitted_model3_WC_r2 = r2_score(dataset3, fitted_model3_WC)
+
+    print(fitted_model1_WC_parms, 'r^2 = ', fitted_model1_WC_r2)
+    print(fitted_model2_WC_parms, 'r^2 = ', fitted_model2_WC_r2)
+    print(fitted_model3_WC_parms, 'r^2 = ', fitted_model3_WC_r2)
+    
+
+
+"""
+Plotting variance versus time and fitting an exponential decay function for paper
+"""
+def decay(t,a,tau, b):
+    return a*np.exp(-t/tau) + b
+
+if False:
+    # we have to import another data set which contains many more time points
+    palette = plt.get_cmap('tab10')
+    filepath = str('var_vs_t/parameters.txt')
+    paramfile = open(filepath, 'r')
+    data_many_t = {}
+    for line in paramfile:
+        line1 = line.replace('\n', '')
+        line2 = line1.replace(" ", "_")
+        try:
+            f = open("var_vs_t/data_manytpoints_{}_{}.dat".format(str(0), line2), "rb")
+            data_many_t[line2] = pickle.load(f)
+        except FileNotFoundError:
+            print("var_vs_t/data_manytpoints_{}_{}.dat".format(str(0), line2), ' NOT FOUND')
+    paramfile.close()
+
+    keys = (['0.1_1.0_1.0', '0.08_1.0_1.0', '0.07_1.0_1.0', '0.06_1.0_1.0',
+             '0.04_1.0_1.0', '0.03_1.0_1.0', '0.01_1.0_1.0'])
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.axhline(y=np.pi**2/3, color='k', linestyle='--', alpha=0.2)
+    plt.annotate(r'$\sigma_f^2 = \frac{\pi^2}{3}$', xy=(
+        10, np.pi**2/3-0.17), xytext=(10, np.pi**2/3-0.17))
+    color = 0
+    widths = [1.15, 1.15, 1.15, 1.15, 2, 2, 2, 2, 2]
+    alphas = np.ones(7)
+    styles = ['-', '--', '-.', ':', '-', '--', '-.']
+    for key in keys:
+        states = data_many_t[key]['states']
+        var = np.zeros((states.shape[0]))               # 400 time steps are saved, out of 400, tmax = 400      
+        for t in range((states.shape[0])):
+            var[t] = variance(states[t, :], omega)
+        lab = data_many_t[key]['system']['n']
+        if lab == 0.1:
+            lab = '0.10'
+        if color < 4:
+            ax.plot(range(300), var[0:300], 'k', linestyle=styles[color],
+                    linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
+        else:
+            ax.plot(range(235), var[0:235], 'k', linestyle=styles[color],
+                    linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
+        
+        variance_fit_parms, variance_fit_cov = curve_fit(decay, np.linspace(0,299,300), var[0:300])
+        
+        print(lab, variance_fit_parms[1]/33.333)
+        
+        if color < 4:
+            length=300
+        else:
+            length=235
+        ax.plot(np.linspace(0,length-1,length), decay(np.linspace(0,length-1,length), *variance_fit_parms), color='r',alpha=0.6)
+        
+        
+        color += 1
+
+       
+    legend = plt.legend(loc=4, title=r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', frameon=False)
+    plt.setp(legend.get_title(), fontsize=16)
+    ax.set_ylim((0, 3.5))
+    ax.set_xlim((0, 300))
+    ax.set_xlabel(r'$\tau$', fontsize=14)
+    ax.set_ylabel(r'$\sigma_f^2$', fontsize=14, rotation=0, labelpad=15)
+    plt.show()
+#    fig.savefig('cont_mean_field_var_vs_t_exp_fits.pdf')
+
+
+"""
+Creating a plot for time constant versus ratio eta/sigma k for paper
+"""
+if False:
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+ 
+    ax1.set_xlabel(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', fontsize=16)
+    # labelpad increases distance label to axis
+    ax1.set_ylabel(r'$\tau$', fontsize=14, rotation=0, labelpad=10)
+#    ax1.set_ylim((0, 6))
+    ax1.set_xlim((0, 0.15))
+
+    # specify number of digits in ticks
+    ax1.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+   
+    xdata = np.zeros(len(data.keys()))
+    ydata = np.zeros(len(data.keys()))
+    i = 0
+    for run in data.keys():
+        states = data[run]['states_t%100']              # 30 time steps are saved, out of (?300 000?), tmax = 1000. Time steps are 33.3x bigger than in the previous plot      
+        n = data[run]['system']['n']
+        var = np.zeros((states.shape[0]))
+        for t in range((states.shape[0])):
+            var[t] = variance(states[t, :], omega)
+        variance_fit_parms, variance_fit_cov = curve_fit(decay, np.linspace(0,len(var)-1,len(var)), var)
+        
+        xdata[i] = n
+        ydata[i] = variance_fit_parms[1]
+        i += 1
+
+    ax1.plot(xdata, ydata, 'k.', alpha=0.8, markersize=8)
+    ax1.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
+    ax1.axvline(x=0.072, color='k', linestyle='--', alpha=0.2)
+    ax1.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.068$',
+                 xy=(0.04, 2.7), xytext=(0.04, 2.7))
+    ax1.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.072$',
+                 xy=(0.077, 2.7), xytext=(0.077, 2.7))
+
+    ax1.minorticks_on()
+    plt.show()
+#    fig.savefig('cont_mean_field_ratio_vs_timeconstant.pdf')
