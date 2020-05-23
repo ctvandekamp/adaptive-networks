@@ -615,9 +615,9 @@ if False:
     dataset2 = data['0.03_1.0_1.0']['states_t%100'][-1]
     dataset3 = data['0.06_1.0_1.0']['states_t%100'][-1]
 
-    fitted_model1_WC_parms, fitted_model1_WC_cov1 = curve_fit(WrappedCauchy, omega, dataset1)
-    fitted_model2_WC_parms, fitted_model1_WC_cov2 = curve_fit(WrappedCauchy, omega, dataset2) #      bounds=(0.068, [100, 0.075]))
-    fitted_model3_WC_parms, fitted_model1_WC_cov3 = curve_fit(WrappedCauchy, omega, dataset3)
+    fitted_model1_WC_parms, fitted_model1_WC_cov = curve_fit(WrappedCauchy, omega, dataset1)
+    fitted_model2_WC_parms, fitted_model2_WC_cov = curve_fit(WrappedCauchy, omega, dataset2) #      bounds=(0.068, [100, 0.075]))
+    fitted_model3_WC_parms, fitted_model3_WC_cov = curve_fit(WrappedCauchy, omega, dataset3)
     
     
     fitted_model1_WC = WrappedCauchy(omega, *fitted_model1_WC_parms)
@@ -659,6 +659,117 @@ if False:
     print(fitted_model2_WC_parms, 'r^2 = ', fitted_model2_WC_r2)
     print(fitted_model3_WC_parms, 'r^2 = ', fitted_model3_WC_r2)
     
+
+
+"""
+Plotting wrapped Cauchy distr. fit parameter gamma vs system parameter ratio eta / (sigma k).
+"""
+def logfunc(x, mult):
+    #this is a natural logarithm
+    xoff = 0.068 +1e-10
+    return  mult * (np.log(-x+xoff) - np.log(xoff-1e-10))
+
+def polynom(x, alpha):
+    x0=0.068+1e-10
+    return 1/((-x+x0)**alpha) - 1/((x0)**alpha)
+
+
+if True:
+    gammas = np.zeros(len(data))
+    etas = np.zeros(len(data))
+    r2s = np.zeros(len(data))
+    eps=1e-10
+    i=0
+    for run in data.keys():
+        eta = data[run]['system']['n']
+        if eta > 0.068-eps: # left bound of citical interval
+            etas = etas[0:i]
+            gammas = gammas[0:i]
+            r2s = r2s[0:i]
+            break
+        states = data[run]['states_t%100'][-1]
+        fitted_model_WC_parms, fitted_model_WC_cov = curve_fit(WrappedCauchy, omega, states, maxfev=500, p0=[1])
+        fitted_model_WC = WrappedCauchy(omega, *fitted_model_WC_parms)
+        fitted_model_WC_r2 = r2_score(states, fitted_model_WC)
+        
+       # print(fitted_model_WC_parms)
+       # print(fitted_model_WC_r2)
+        
+        gammas[i] = fitted_model_WC_parms
+        etas[i] = data[run]['system']['n']
+        r2s[i] = fitted_model_WC_r2
+        i+=1
+        
+        # if i==80:
+        #     omega_axis = [val*radians for val in omega]
+
+        #     fig2 = plt.figure()
+        #     ax3 = fig2.add_subplot(1,1,1)
+        #     ax3.set_xlim((-np.pi, np.pi))
+        #     ax3.set_ylim((0, 2.2))
+        #     ax3.plot(omega_axis, states, 'r', '-', label='data')
+        #     ax3.plot(omega_axis, fitted_model_WC, 'b', '--', label='fit')
+        #     plt.show()
+    
+    
+    fitted_log_to_gamma_parms, fitted_log_to_gamma_cov = curve_fit(logfunc, etas, gammas, p0=[-0.6])
+    fitted_log_to_gamma = logfunc(etas, *fitted_log_to_gamma_parms)
+    fitted_log_to_gamma_r2 = r2_score(gammas, fitted_log_to_gamma)
+    
+    fitted_polynom_to_gamma_parms, fitted_log_to_gamma_cov = curve_fit(polynom, etas, gammas, p0=[10])
+    fitted_polynom_to_gamma = polynom(etas, *fitted_polynom_to_gamma_parms)
+    # fitted_polynom_to_gamma = polynom(etas, 1,-4,-1)
+    fitted_polynom_to_gamma_r2 = r2_score(gammas, fitted_polynom_to_gamma)
+    
+    fig = plt.figure(figsize=(1.75*6.4*3/2, 4.82*1.5))
+    palette = plt.get_cmap('tab10')
+    ax1 = fig.add_subplot(1, 3, 1)
+    ax2 = fig.add_subplot(1, 3, 2)
+    ax3 = fig.add_subplot(1, 3, 3)
+
+    ax1.set_xlabel(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', fontsize=16)
+    ax1.set_ylabel(r'$\gamma$', fontsize=14, rotation=0, labelpad=10)
+    ax1.set_ylim((0, 3))
+    ax1.set_xlim((0, 0.08))
+    ax1.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
+    ax1.axvline(x=0.072, color='k', linestyle='--', alpha=0.2)
+    ax1.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.068$',
+                 xy=(0.054, 0.3), xytext=(0.054, 0.3))
+    ax1.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.072$',
+                 xy=(0.073, 0.3), xytext=(0.073, 0.3))
+    ax1.annotate(r'$\gamma = m\ \left(\log\left( -\frac{\eta}{\sigma_c \langle k \rangle^2} +0.068 \right) - \log(0.068) \right)$', xy=(0.005,2), xytext=(0.005,2))
+    ax1.plot(etas, gammas, marker='x', color='k', linestyle = '')
+    
+    ax1.plot(etas, fitted_log_to_gamma, color='k', label='fit', alpha = 0.5)
+   
+    
+    ax2.set_xlabel(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', fontsize=16)
+    ax2.set_ylabel(r'$\gamma$', fontsize=14, rotation=0, labelpad=10)
+    ax2.set_ylim((0, 3))
+    ax2.set_xlim((0, 0.08))
+    ax2.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
+    ax2.axvline(x=0.072, color='k', linestyle='--', alpha=0.2)
+    ax2.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.068$',
+                 xy=(0.054, 0.3), xytext=(0.054, 0.3))
+    ax2.annotate(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}=0.072$',
+                 xy=(0.073, 0.3), xytext=(0.073, 0.3))
+    ax2.plot(etas, gammas, marker='x', color='k', linestyle = '')
+    ax2.annotate(r'$\gamma = \frac{1}{(-\frac{\eta}{\sigma_c \langle k \rangle^2}+0.068)^\alpha} - \frac{1}{(0.068)^\alpha}$', xy=(0.02,2), xytext=(0.02,2))
+    
+    ax2.plot(etas, fitted_polynom_to_gamma, color='k', label='fit', alpha = 0.5)
+    
+    
+    ax3.plot(etas,r2s, marker='x', color='k', linestyle='')
+    ax3.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
+    ax3.axvline(x=0.072, color='k', linestyle='--', alpha=0.2)
+    ax3.set_xlabel(r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', fontsize=16)
+    ax3.set_ylabel(r'$R^2$', fontsize=14, rotation=0, labelpad=10)
+    ax3.set_ylim((0.9,1))
+    
+    
+    plt.show()
+    # fig.savefig('wrapped_Cauchy_gamma_vs_eta_logfit_polyfit_r2.pdf')
+
 
 
 """
