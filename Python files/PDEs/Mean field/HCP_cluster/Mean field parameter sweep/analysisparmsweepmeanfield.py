@@ -672,9 +672,9 @@ def logfunc(x, mult):
 def polynom(x, alpha):
     x0=0.068+1e-10
     return 1/((-x+x0)**alpha) - 1/((x0)**alpha)
+  
 
-
-if True:
+if False:
     gammas = np.zeros(len(data))
     etas = np.zeros(len(data))
     r2s = np.zeros(len(data))
@@ -757,7 +757,7 @@ if True:
     ax2.annotate(r'$\gamma = \frac{1}{(-\frac{\eta}{\sigma_c \langle k \rangle^2}+0.068)^\alpha} - \frac{1}{(0.068)^\alpha}$', xy=(0.02,2), xytext=(0.02,2))
     
     ax2.plot(etas, fitted_polynom_to_gamma, color='k', label='fit', alpha = 0.5)
-    
+  
     
     ax3.plot(etas,r2s, marker='x', color='k', linestyle='')
     ax3.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
@@ -775,8 +775,23 @@ if True:
 """
 Plotting variance versus time and fitting an exponential decay function for paper
 """
-def decay(t,a,tau, b):
-    return a*np.exp(-t/tau) + b
+def decay_exp(t,a,tau):
+    return a*np.exp(-t/tau) - a + 1
+
+def frac_power(a,p):
+    # returns a^p for p fraction
+    return np.sign(a) * (np.abs(a)) ** (p)
+
+def decay_pol(t, alpha, t_shift,b):
+    if b*t.any() == t_shift or t_shift==0:
+        t_shift += 1e-9
+    #return -1/((b*t+t_shift)**alpha) + 1/(t_shift**alpha) + 1
+    return -1/frac_power(b*t+t_shift, alpha) + 1/frac_power(t_shift,alpha) + 1
+
+def decay_pol2(t, alpha, t_shift,b):
+    if b*t.any() == t_shift or t_shift==0:
+        t_shift += 1e-9
+    return 1/frac_power(b*t+t_shift, alpha) - 1/frac_power(t_shift,alpha) + 1
 
 if False:
     # we have to import another data set which contains many more time points
@@ -797,11 +812,10 @@ if False:
     keys = (['0.1_1.0_1.0', '0.08_1.0_1.0', '0.07_1.0_1.0', '0.06_1.0_1.0',
              '0.04_1.0_1.0', '0.03_1.0_1.0', '0.01_1.0_1.0'])
 
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    ax.axhline(y=np.pi**2/3, color='k', linestyle='--', alpha=0.2)
-    plt.annotate(r'$\sigma_f^2 = \frac{\pi^2}{3}$', xy=(
-        10, np.pi**2/3-0.17), xytext=(10, np.pi**2/3-0.17))
+    fig = plt.figure(figsize=(1.75*6.4, 4.82))
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax2 = fig.add_subplot(1, 2, 2)
+        
     color = 0
     widths = [1.15, 1.15, 1.15, 1.15, 2, 2, 2, 2, 2]
     alphas = np.ones(7)
@@ -815,40 +829,79 @@ if False:
         if lab == 0.1:
             lab = '0.10'
         if color < 4:
-            ax.plot(range(300), var[0:300], 'k', linestyle=styles[color],
+            ax1.plot(range(300), var[0:300], 'k', linestyle=styles[color],
+                    linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
+            ax2.plot(range(300), var[0:300], 'k', linestyle=styles[color],
                     linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
         else:
-            ax.plot(range(235), var[0:235], 'k', linestyle=styles[color],
+            ax1.plot(range(235), var[0:235], 'k', linestyle=styles[color],
+                    linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
+            ax2.plot(range(235), var[0:235], 'k', linestyle=styles[color],
                     linewidth=widths[color], alpha=alphas[color], label=lab)  # color = palette(color)
         
-        variance_fit_parms, variance_fit_cov = curve_fit(decay, np.linspace(0,299,300), var[0:300])
         
-        print(lab, variance_fit_parms[1]/33.333)
         
-        if color < 4:
+        if color < 4:  
             length=300
-        else:
+            variance_fit_parms_pol, variance_fit_cov_pol = curve_fit(decay_pol, np.linspace(0,299,300), var[0:300], p0=[1, 1, 1/10])
+            fitted_pol_r2 = r2_score(var[0:300], decay_pol(np.linspace(0,300-1,300), *variance_fit_parms_pol))
+            print(lab, "POL:  alpha = %.3f,  t_shift = %.3f,  b = %.6f,  R2 = %.3f" % (variance_fit_parms_pol[0], variance_fit_parms_pol[1], variance_fit_parms_pol[2], fitted_pol_r2))
+            ax2.plot(np.linspace(0,length-1,length), decay_pol(np.linspace(0,length-1,length), *variance_fit_parms_pol), color='b',alpha=0.6)
+        elif color == 4: 
+            # Different p0 for fitting
             length=235
-        ax.plot(np.linspace(0,length-1,length), decay(np.linspace(0,length-1,length), *variance_fit_parms), color='r',alpha=0.6)
+            variance_fit_parms_pol, variance_fit_cov_pol = curve_fit(decay_pol, np.linspace(0,299,300), var[0:300], p0=[1, 1, 1/100], maxfev=7000)  #takes longer to fit so maxfev 7000
+            fitted_pol_r2 = r2_score(var[0:300], decay_pol(np.linspace(0,300-1,300), *variance_fit_parms_pol))
+            print(lab, "POL:  alpha = %.3f,  t_shift = %.3f,  b = %.6f,  R2 = %.3f" % (variance_fit_parms_pol[0], variance_fit_parms_pol[1], variance_fit_parms_pol[2], fitted_pol_r2))
+            ax2.plot(np.linspace(0,length-1,length), decay_pol(np.linspace(0,length-1,length), *variance_fit_parms_pol), color='b',alpha=0.6)
+        else:
+            # Different p0 for fitting
+            length=235
+            variance_fit_parms_pol, variance_fit_cov_pol = curve_fit(decay_pol2, np.linspace(0,299,300), var[0:300], p0=[20, 1, 1/100], maxfev=10000)  #takes longer to fit so maxfev 10000
+            fitted_pol_r2 = r2_score(var[0:300], decay_pol2(np.linspace(0,300-1,300), *variance_fit_parms_pol))
+            print(lab, "POL(2):  alpha(2) = %.3f,  t_shift(2) = %.3f,  b(2) = %.6f,  R2(2) = %.3f" % (variance_fit_parms_pol[0], variance_fit_parms_pol[1], variance_fit_parms_pol[2], fitted_pol_r2))
+            ax2.plot(np.linspace(0,length-1,length), decay_pol2(np.linspace(0,length-1,length), *variance_fit_parms_pol), color='b',alpha=0.6)
+            
+        variance_fit_parms_exp, variance_fit_cov_exp = curve_fit(decay_exp, np.linspace(0,299,300), var[0:300])
+        fitted_exp_r2 = r2_score(var[0:300], decay_exp(np.linspace(0,300-1,300), *variance_fit_parms_exp))
+        # print(lab, "exp decay time = ", variance_fit_parms_exp[1]/33.333)
+        print(lab, "EXP: a = %.3f,  tau = %.3f, R2 = %.3f" % (variance_fit_parms_exp[0], variance_fit_parms_exp[1], fitted_exp_r2))
+        ax1.plot(np.linspace(0,length-1,length), decay_exp(np.linspace(0,length-1,length), *variance_fit_parms_exp), color='r',alpha=0.6)
         
-        
+
         color += 1
 
        
     legend = plt.legend(loc=4, title=r'$\frac{\eta}{\sigma_c \langle k \rangle^2}$', frameon=False)
     plt.setp(legend.get_title(), fontsize=16)
-    ax.set_ylim((0, 3.5))
-    ax.set_xlim((0, 300))
-    ax.set_xlabel(r'$\tau$', fontsize=14)
-    ax.set_ylabel(r'$\sigma_f^2$', fontsize=14, rotation=0, labelpad=15)
+    
+    ax1.set_ylim((0, 3.5))
+    ax1.set_xlim((0, 300))
+    ax1.set_xlabel(r'$\tau$', fontsize=14)
+    ax1.set_ylabel(r'$\sigma_f^2$', fontsize=14, rotation=0, labelpad=15)
+    ax1.axhline(y=np.pi**2/3, color='k', linestyle='--', alpha=0.2)
+    plt.annotate(r'$\sigma_f^2 = \frac{\pi^2}{3}$', xy=(
+        10, np.pi**2/3-0.17), xytext=(10, np.pi**2/3-0.17))
+    ax1.set_title("exponential")
+    
+    ax2.set_ylim((0, 3.5))
+    ax2.set_xlim((0, 300))
+    ax2.set_xlabel(r'$\tau$', fontsize=14)
+    ax2.set_ylabel(r'$\sigma_f^2$', fontsize=14, rotation=0, labelpad=15)
+    ax2.axhline(y=np.pi**2/3, color='k', linestyle='--', alpha=0.2)
+    plt.annotate(r'$\sigma_f^2 = \frac{\pi^2}{3}$', xy=(
+        10, np.pi**2/3-0.17), xytext=(10, np.pi**2/3-0.17))
+    ax2.set_title("polynomial")
+    
+
     plt.show()
-#    fig.savefig('cont_mean_field_var_vs_t_exp_fits.pdf')
+    # fig.savefig('cont_mean_field_var_vs_t_exp_pol_fits.pdf')
 
 
 """
 Creating a plot for time constant versus ratio eta/sigma k for paper
 """
-if False:
+if True:
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 1, 1)
  
@@ -856,10 +909,11 @@ if False:
     # labelpad increases distance label to axis
     ax1.set_ylabel(r'$\tau$', fontsize=14, rotation=0, labelpad=10)
 #    ax1.set_ylim((0, 6))
-    ax1.set_xlim((0, 0.15))
+    ax1.set_xlim((0, 0.2))
 
     # specify number of digits in ticks
     ax1.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    
    
     xdata = np.zeros(len(data.keys()))
     ydata = np.zeros(len(data.keys()))
@@ -867,15 +921,21 @@ if False:
     for run in data.keys():
         states = data[run]['states_t%100']              # 30 time steps are saved, out of (?300 000?), tmax = 1000. Time steps are 33.3x bigger than in the previous plot      
         n = data[run]['system']['n']
+    
         var = np.zeros((states.shape[0]))
         for t in range((states.shape[0])):
             var[t] = variance(states[t, :], omega)
-        variance_fit_parms, variance_fit_cov = curve_fit(decay, np.linspace(0,len(var)-1,len(var)), var)
+        if n < 0.06 or n>0.148: # Correct numerical fitting error using better initial guess p0 depending on n
+            variance_fit_parms, variance_fit_cov = curve_fit(decay_exp, np.linspace(0,len(var)-1,len(var)), var)
+        else: 
+            variance_fit_parms, variance_fit_cov = curve_fit(decay_exp, np.linspace(0,len(var)-1,len(var)), var, p0=[-2,1.5])
+
+        
         
         xdata[i] = n
         ydata[i] = variance_fit_parms[1]
         i += 1
-
+        
     ax1.plot(xdata, ydata, 'k.', alpha=0.8, markersize=8)
     ax1.axvline(x=0.068, color='k', linestyle='--', alpha=0.2)
     ax1.axvline(x=0.072, color='k', linestyle='--', alpha=0.2)
@@ -886,4 +946,9 @@ if False:
 
     ax1.minorticks_on()
     plt.show()
-#    fig.savefig('cont_mean_field_ratio_vs_timeconstant.pdf')
+    # fig.savefig('cont_mean_field_ratio_vs_timeconstant.pdf')
+
+
+
+    
+
